@@ -1,4 +1,4 @@
-function problem_init(problem_ID)
+function problem_init(problem_ID,n_refin)
 % load the data structure with info pertaining to the physical problem
 
 % make the problem data a global variable
@@ -10,6 +10,10 @@ dat.rod_mov_times.t_end_1=0.6;
 dat.rod_mov_times.t_beg_2=1.; 
 dat.rod_mov_times.t_end_2=2.7;
 
+% kinetic parameters 
+dat.beta_tot=600e-5;
+dat.lambda=0.1;
+dat.invvel=1e-3;
 % assign function pointers to the various physical coeffcients
 switch problem_ID
     
@@ -19,46 +23,72 @@ switch problem_ID
         % depend on x in a piecewise manner and we may end up, depending on 
         % on the chosen mesh, with elements that contain more than 1
         % material        
-        dat.diff          = @diffusion_coefficient;
-        dat.siga          = @sigma_a;
-        dat.nusigf        = @nu_fission;
-        dat.nusigf_prompt = @nu_fission_prompt;
-        dat.nusigf_delayed= @nu_fission_delayed;
-        dat.inv_vel       = @inverse_velocity;
-        dat.esrc          = @esrc;
+%         dat.diff          = @diffusion_coefficient;
+%         dat.siga          = @sigma_a;
+%         dat.nusigf        = @nu_fission;
+%         dat.nusigf_prompt = @nu_fission_prompt;
+%         dat.nusigf_delayed= @nu_fission_delayed;
+%         dat.inv_vel       = @inverse_velocity;
+%         dat.esrc          = @esrc;
         
-        dat.width=400;
+        b=dat.beta_tot;
+        iv=dat.invvel;
+        dat.cdiff{1}   = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+        dat.sigma_a{1} = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf{1}  = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf_p{1}= create_material_prop('constant_in_time',1.1*(1-b),[],'constant_in_space',0);
+        dat.nusigf_d{1}= create_material_prop('constant_in_time',1.1*b    ,[],'constant_in_space',0);
+        dat.inv_vel{1} = create_material_prop('constant_in_time',iv       ,[],'constant_in_space',0);
+        dat.ext_src{1} = create_material_prop('constant_in_time',0        ,[],'constant_in_space',0);
+
+        dat.n_regions=1;
+        dat.region_width=400;
+        dat.width = dat.region_width * dat.n_regions;
 
     case 2
         % have material identifiers 
         dat.material_ID = true;
-        nregions=20; % assumption: each region has the same width
-        imat = ones(n_regions,1);
+        dat.n_regions = 20; % assumption: each region has the same width
+        dat.region_width=400/dat.n_regions;
+        dat.width = dat.region_width * dat.n_regions;
+        
+        imat = ones(dat.n_regions,1);
         imat(5) = 2;
         imat(6) = 3;
         imat(15:16)=4;
         dat.imat = imat; clear imat;
         
-        dat.diff          = @diffusion_coefficient_mat;
-        dat.siga          = @sigma_a_mat;
-        dat.nusigf        = @nu_fission_mat;
-        dat.nusigf_prompt = @nu_fission_prompt_mat;
-        dat.nusigf_delayed= @nu_fission_delayed_mat;
-        dat.inv_vel       = @inverse_velocity_mat;
-        dat.esrc          = @esrc_mat;
-
-        dat.width=400;
+        b=dat.beta_tot;
+        iv=dat.invvel;
+        dat.cdiff{1}   = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+        dat.sigma_a{1} = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf{1}  = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf_p{1}= create_material_prop('constant_in_time',1.1*(1-b),[],'constant_in_space',0);
+        dat.nusigf_d{1}= create_material_prop('constant_in_time',1.1*b    ,[],'constant_in_space',0);
+        dat.inv_vel{1} = create_material_prop('constant_in_time',iv       ,[],'constant_in_space',0);
+        dat.ext_src{1} = create_material_prop('constant_in_time',0        ,[],'constant_in_space',0);
+        % copy material properties
+        for id=2:4
+            dat.cdiff{id}    = dat.cdiff{1}   ;
+            dat.nusigf{id}   = dat.nusigf{1}  ;
+            dat.nusigf_p{id} = dat.nusigf_p{1};
+            dat.nusigf_d{id} = dat.nusigf_d{1};
+            dat.inv_vel{id}  = dat.inv_vel{1} ;
+            dat.ext_src{id}  = dat.ext_src{1}    ;
+        end
+        times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1];
+        dat.sigma_a{2} = create_material_prop('ramp_in_time',[1.1 1.095],times,'constant_in_space',0);
+        dat.sigma_a{4} = create_material_prop('ramp_in_time',[1.1 1.105],times,'constant_in_space',0);
+        times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1 ...
+                 dat.rod_mov.t_beg_2 dat.rod_mov.t_end_2 ];
+        dat.sigma_a{3} = create_material_prop('ramp2_in_time',[1.1 1.105 1.1],times,'constant_in_space',0);
         
     otherwise
         error('unknown problem ID ',problem_ID);
 end
 
-dat.beta_tot=600e-5;
-dat.lambda=0.1;
-dat.invvel=1e-3;
-
+% normalization for nu (default=1)
 dat.keff=1.;
-
 
 bc.left.type=2; %0=neumann, 1=robin, 2=dirichlet
 bc.left.C=0; % (that data is C in: -Ddu/dn=C // u/4+D/2du/dn=C // u=C)
@@ -67,8 +97,16 @@ bc.rite.C=0;
 dat.bc=bc; clear bc;
 
 % load the numerical parameters, npar, structure pertaining to numerics
+% nbr of cells/region = n_refin
+% elem_to_mat = [];
+% for ireg=1:dat.n_regions 
+%     elem_to_mat = [elem_to_mat imat(ireg)*ones(n_refin,1)];
+% end
+% npar.elem_to_mat = elem_to_mat; clear elem_to_mat
+npar.elem_to_mat = kron(imat,ones(dat.n_regions,1));
+
 % number of elements
-npar.nel = 100;
+npar.nel = n_refin * dat.n_regions ;
 % domain
 npar.x = linspace(0,dat.width,npar.nel+1);
 % polynomial degree
