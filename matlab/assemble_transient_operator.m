@@ -8,14 +8,14 @@ M   = sparse(2*n,2*n,2*(nnz+n));
 
 D    = assemble_stiffness(dat.diff          ,curr_time);
 A    = assemble_mass(     dat.siga          ,curr_time);
-NFIp = assemble_mass(     dat.nusigf_prompt ,curr_time);
-NFId = assemble_mass(     dat.nusigf_delayed,curr_time);
+NFIp = assemble_mass(     dat.nusigf_prompt ,curr_time) / npar.keff;
+NFId = assemble_mass(     dat.nusigf_delayed,curr_time) / npar.keff;
 
 % flux-flux matrix
 tmp=NFIp-(D+A); 
-tmp=apply_BC_mat_only(tmp,npar.add_zero_on_diagonal);
+% tmp=apply_BC_mat_only(tmp,npar.add_zero_on_diagonal);
 % prec-flux matrix
-NFId=apply_BC_mat_only(NFId,npar.add_zero_on_diagonal);
+% NFId=apply_BC_mat_only(NFId,npar.add_zero_on_diagonal);
 
 % generic matrix for precursors (it is diagonal because the unknown 
 % precursor concentrations are not the FEM expansion values but int b_i C

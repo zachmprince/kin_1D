@@ -7,6 +7,7 @@ n=npar.n;
 % apply BC (Dirichlet 0 for the mass matrix where Dirichlet is required!!!)
 Dirichlet_nodes=[];
 Dirichlet_val=[];
+
 if(dat.bc.left.type==2)
     Dirichlet_nodes=[Dirichlet_nodes 1];
     Dirichlet_val=[Dirichlet_val dat.bc.left.C];

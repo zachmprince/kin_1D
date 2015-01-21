@@ -87,14 +87,15 @@ switch problem_ID
         error('unknown problem ID ',problem_ID);
 end
 
-% normalization for nu (default=1)
-dat.keff=1.;
 
 bc.left.type=2; %0=neumann, 1=robin, 2=dirichlet
 bc.left.C=0; % (that data is C in: -Ddu/dn=C // u/4+D/2du/dn=C // u=C)
 bc.rite.type=2;
 bc.rite.C=0;
 dat.bc=bc; clear bc;
+
+% normalization for nu (default=1)
+npar.keff=1.;
 
 % load the numerical parameters, npar, structure pertaining to numerics
 % nbr of cells/region = n_refin
