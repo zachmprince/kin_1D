@@ -34,7 +34,9 @@ for iel=1:npar.nel
     % b and dbdx(:,:) are of size (nbr of xq values) x (porder+1),
     % 2/dx is the 1d jacobian
     s=fct_ptr(curr_time,x)*Jac;
-
+    imat=elem_to_mat(iel);
+    s=evaluate_mat_prop(fct_prt{imat},curr_time,x)*Jac;
+    
     % assemble
     for i=1:porder+1
         for j=1:porder+1

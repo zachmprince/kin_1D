@@ -1,26 +1,32 @@
-function M=assemble_transient_operator(curr_time)
+function M = assemble_transient_operator(curr_time)
 
 global dat npar
 
 n   = npar.n;
 nnz = npar.nnz;
-M = sparse(2*n,2*n,2*(nnz+n));
+M   = sparse(2*n,2*n,2*(nnz+n));
 
-D    = assemble_stiffness(dat.diff,curr_time);
-A    = assemble_mass(dat.siga,curr_time);
-NFIp = assemble_mass(dat.nusigf_prompt,curr_time);
-NFId = assemble_mass(dat.nusigf_delayed,curr_time);
+D    = assemble_stiffness(dat.diff          ,curr_time);
+A    = assemble_mass(     dat.siga          ,curr_time);
+NFIp = assemble_mass(     dat.nusigf_prompt ,curr_time);
+NFId = assemble_mass(     dat.nusigf_delayed,curr_time);
 
+% flux-flux matrix
 tmp=NFIp-(D+A); 
-tmp=apply_BC_mat_only(tmp,true);
-NFId=apply_BC_mat_only(NFId,true);
+tmp=apply_BC_mat_only(tmp,npar.add_zero_on_diagonal);
+% prec-flux matrix
+NFId=apply_BC_mat_only(NFId,npar.add_zero_on_diagonal);
 
+% generic matrix for precursors (it is diagonal because the unknown 
+% precursor concentrations are not the FEM expansion values but int b_i C
 L=dat.lambda*speye(n);
-Ldiag=apply_BC_mat_only(L,true);
-Loffd=apply_BC_mat_only(L,true);
+% prec-prec matrix
+Ldiag=apply_BC_mat_only(L,npar.add_zero_on_diagonal);
+% flux-prec matrix
+Loffd=apply_BC_mat_only(L,npar.add_zero_on_diagonal);
 
 
-
+% finally, build the rhs operator for the transient problem
 M(1:n    ,1:n    ) = tmp;
 M(1:n    ,n+1:2*n) =  Loffd;
 M(n+1:2*n,1:n    ) = NFId;

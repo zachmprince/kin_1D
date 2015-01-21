@@ -4,16 +4,17 @@ function kinetics_driver
 close all; clc;
 global dat npar
 
-% get current directory
-s=what; cur_dir=s.path; addpath(genpath(cur_dir))
+% % get current directory
+% s=what; cur_dir=s.path; addpath(genpath(cur_dir))
 
 % select problem
 pbID=1;
 problem_init(pbID);
 
 % compute eigenmode
-[phi,keff]=steady_state_eigenproblem(0);
-plot(dat.x_dofs,phi)
+curr_time=0;
+[phi,keff]=steady_state_eigenproblem(curr_time);
+plot(npar.x_dofs,phi)
 
 % hold all
 % [phi1,keff1]=steady_state_eigenproblem(1);
@@ -24,7 +25,7 @@ plot(dat.x_dofs,phi)
 %
 % [keff keff1 keff2]'
 
-C=kinetics_init(phi,0);
+C=kinetics_init(phi,curr_time);
 % npar.K0
 % npar.Pnorm
 u=[phi;C]; u0=u;

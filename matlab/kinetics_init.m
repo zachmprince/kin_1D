@@ -4,8 +4,8 @@ function [C]=kinetics_init(phi,curr_time)
 global dat npar 
 
 NFId = assemble_mass(dat.nusigf_delayed,curr_time);
-NFId=apply_BC_mat_only(NFId,true);
-C=NFId*phi/dat.lambda;
+NFId = apply_BC_mat_only(NFId,true);
+C = NFId*phi/dat.lambda;
 
 % verif
 % M=assemble_transient_operator(curr_time);

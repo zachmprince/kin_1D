@@ -119,7 +119,11 @@ end
 npar.gn=gn; clear gn;
 
 % save x-positions of the unknowns (dofs)
-dat.x_dofs=linspace(0,dat.width,npar.ndofs(1));
+npar.x_dofs=linspace(0,dat.width,npar.ndofs(1));
+
+% save useful logical
+npar.add_zero_on_diagonal=true;
+npar.add_ones_on_diagonal=~npar.add_zero_on_diagonal;
 
 return
 end

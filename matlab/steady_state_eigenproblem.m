@@ -1,10 +1,10 @@
 function [u,keff]=steady_state_eigenproblem(curr_time)
 
-global dat
+global npar
 [M,P]=assemble_steady_state_operator(curr_time);
 
-M=apply_BC_mat_only(M,false);
-P=apply_BC_mat_only(P,true);
+M=apply_BC_mat_only(M,npar.add_ones_on_diagonal);
+P=apply_BC_mat_only(P,npar.add_zero_on_diagonal);
 
 % % kold=1;uold=rand(length(M),1);
 % % uold=uold/norm(uold,2);
@@ -31,7 +31,7 @@ P=apply_BC_mat_only(P,true);
 opts.disp=0;
 [u,keff]=eigs(P,M,1,'lm',opts);
 
-dat.keff=keff;
+npar.keff=keff;
 
 if sum(u)<0
     u=-u;
