@@ -8,8 +8,8 @@ global dat npar
 % s=what; cur_dir=s.path; addpath(genpath(cur_dir))
 
 % select problem
-pbID=1;
-problem_init(pbID);
+pbID=1; refinements=50;
+problem_init(pbID,refinements);
 
 % compute eigenmode
 curr_time=0;
@@ -39,11 +39,13 @@ for it=1:500
     TR=assemble_transient_operator(time_end);
     M =assemble_time_dependent_operator(time_end);
     % M(unew-uold)/dt=TR.unew
-    rhs=M*u;
-    u = (M-dt*TR)\rhs;
-    plot(dat.x_dofs,u(1:npar.n));drawnow
+    rhs = M*u;
+    A = M-dt*TR;
+    [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
+    u = A\rhs;
+    plot(npar.x_dofs,u(1:npar.n));drawnow
 
-    POW=assemble_load(dat.nusigf,time_end);
+    POW = assemble_load(dat.nusigf,time_end);
     Pnorm(it+1)=dot(POW,u(1:npar.n));
 
 
@@ -51,10 +53,6 @@ end
 
 figure(2);
 plot(Pnorm/Pnorm(1),'+-')
-
-
-% rm path that was added
-rmpath(dat.full_dir);
 
 return
 end

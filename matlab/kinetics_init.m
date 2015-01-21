@@ -3,8 +3,8 @@ function [C]=kinetics_init(phi,curr_time)
 % make the problem-data a global variable
 global dat npar 
 
-NFId = assemble_mass(dat.nusigf_delayed,curr_time);
-NFId = apply_BC_mat_only(NFId,true);
+NFId = assemble_mass(dat.nusigf_d,curr_time);
+% NFId = apply_BC_mat_only(NFId,true);
 C = NFId*phi/dat.lambda;
 
 % verif

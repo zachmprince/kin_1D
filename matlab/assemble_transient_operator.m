@@ -6,10 +6,10 @@ n   = npar.n;
 nnz = npar.nnz;
 M   = sparse(2*n,2*n,2*(nnz+n));
 
-D    = assemble_stiffness(dat.diff          ,curr_time);
-A    = assemble_mass(     dat.siga          ,curr_time);
-NFIp = assemble_mass(     dat.nusigf_prompt ,curr_time) / npar.keff;
-NFId = assemble_mass(     dat.nusigf_delayed,curr_time) / npar.keff;
+D    = assemble_stiffness(dat.cdiff   ,curr_time);
+A    = assemble_mass(     dat.siga    ,curr_time);
+NFIp = assemble_mass(     dat.nusigf_p,curr_time) / npar.keff;
+NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff;
 
 % flux-flux matrix
 tmp=NFIp-(D+A); 
