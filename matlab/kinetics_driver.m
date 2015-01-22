@@ -1,6 +1,6 @@
 function kinetics_driver
 
-% clear all;
+clear all;
 close all; clc;
 global dat npar
 
@@ -8,13 +8,18 @@ global dat npar
 % s=what; cur_dir=s.path; addpath(genpath(cur_dir))
 
 % select problem
-pbID=1; refinements=50;
+pbID=1; refinements=100;
 problem_init(pbID,refinements);
 
 % compute eigenmode
 curr_time=0;
 [phi,keff]=steady_state_eigenproblem(curr_time);
 plot(npar.x_dofs,phi)
+
+fprintf('%10.6g \n',keff);
+k=1.1/(1.1+1*(pi/400)^2)
+% return
+
 
 % hold all
 % [phi1,keff1]=steady_state_eigenproblem(1);

@@ -24,7 +24,7 @@ switch problem_ID
         b=dat.beta_tot;
         iv=dat.invvel;
         dat.cdiff{1}   = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
-        dat.siga{1}    = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.siga{1}    = create_material_prop('constant_in_time',1.0      ,[],'constant_in_space',0);
         dat.nusigf{1}  = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
         dat.nusigf_p{1}= create_material_prop('constant_in_time',1.1*(1-b),[],'constant_in_space',0);
         dat.nusigf_d{1}= create_material_prop('constant_in_time',1.1*b    ,[],'constant_in_space',0);
@@ -97,7 +97,7 @@ npar.keff=1.;
 npar.elem_to_mat = kron(imat,ones(nbr_refinements_per_region,1));
 
 % number of elements
-npar.nel = nbr_refinements_per_region * dat.n_regions ;
+npar.nel = nbr_refinements_per_region * n_regions ;
 % domain
 npar.x = linspace(0,dat.width,npar.nel+1);
 % polynomial degree

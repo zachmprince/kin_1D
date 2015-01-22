@@ -34,7 +34,7 @@ for iel=1:npar.nel
     % 2/dx is the 1d jacobian
     % old: d=fct_ptr(curr_time{imat},x)/Jac;
     imat=npar.elem_to_mat(iel);
-    d=evaluate_material_prop(fct_ptr{imat},curr_time,x)*Jac;
+    d=evaluate_material_prop(fct_ptr{imat},curr_time,x)/Jac;
 
     % assemble
     for i=1:porder+1
