@@ -4,8 +4,7 @@ clear all;
 close all; clc;
 global dat npar
 
-% % get current directory
-% s=what; cur_dir=s.path; addpath(genpath(cur_dir))
+npar.set_bc_last=true;
 
 % select problem
 pbID=1; refinements=100;
@@ -15,10 +14,7 @@ problem_init(pbID,refinements);
 curr_time=0;
 [phi,keff]=steady_state_eigenproblem(curr_time);
 plot(npar.x_dofs,phi)
-
-fprintf('%10.6g \n',keff);
-k=1.1/(1.1+1*(pi/400)^2)
-% return
+fprintf('%10.8g \n',keff);
 
 
 % hold all
@@ -42,37 +38,39 @@ for it=1:500
     time_end=it*dt;
     fprintf('time end = %g \n',time_end);
     
-    TR=assemble_transient_operator(time_end);
-
-%     load tr.mat
-%     M=A+D;
-%     M(end,end)=1;
-%     M(1,1)=1;
-%     P=NFId+NFIp;
-%     eigs(P,M,1,'lm');
-%     [uu,kk]=eigs(P,M,1,'lm');
-%     if(sum(uu)<0), uu=-uu; end
-%     flux=uu;
-%     prec=u0(npar.n+1:end);
-%     [ L*prec (NFIp-A)*flux]
+    TR = assemble_transient_operator(time_end);
     
-    M =assemble_time_dependent_operator(time_end);
-
-%     load tr2.mat;
+    %     load tr.mat
+    %     M=A+D;
+    %     M(end,end)=1;
+    %     M(1,1)=1;
+    %     P=NFId+NFIp;
+    %     eigs(P,M,1,'lm');
+    %     [uu,kk]=eigs(P,M,1,'lm');
+    %     if(sum(uu)<0), uu=-uu; end
+    %     flux=uu;
+    %     prec=u0(npar.n+1:end);
+    %     [ L*prec (NFIp-A)*flux]
+    
+    M = assemble_time_dependent_operator(time_end);
+    
+    %     load tr2.mat;
     
     % M(unew-uold)/dt=TR.unew
     rhs = M*u;
     A = M-dt*TR;
-%    [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
-    rhs=apply_BC_vec_only(rhs);
+    if npar.set_bc_last
+        [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
+    else
+        rhs=apply_BC_vec_only(rhs);
+    end
     u = A\rhs;
-%     [u u0 (u-u0)]
     plot(npar.x_dofs,u(1:npar.n));drawnow
-
+    
     POW = assemble_load(dat.nusigf,time_end);
     Pnorm(it+1)=dot(POW,u(1:npar.n));
-
-
+    
+    
 end
 
 figure(2);
@@ -82,5 +80,9 @@ a=Pnorm/Pnorm(1)-1;
 min(a)
 max(a)
 
+[u(npar.n+1) C(1)]
+[u(end) C(end)]
+[u(npar.n+1:end)./C-1]
+ 
 return
 end

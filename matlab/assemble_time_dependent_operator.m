@@ -8,7 +8,9 @@ M   = sparse(2*n,2*n,nnz+n);
 
 % flux-flux
 IV = assemble_mass(dat.inv_vel,curr_time);
-IV = apply_BC_mat_only(IV,npar.add_ones_on_diagonal);
+if ~npar.set_bc_last
+    IV = apply_BC_mat_only(IV,npar.add_ones_on_diagonal);
+end
 
 % prec-prec
 I=speye(n);
