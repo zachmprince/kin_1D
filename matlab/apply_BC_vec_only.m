@@ -11,10 +11,16 @@ Dirichlet_val=[];
 if(dat.bc.left.type==2)
     Dirichlet_nodes=[Dirichlet_nodes 1];
     Dirichlet_val=[Dirichlet_val dat.bc.left.C];
+    if length(dat.bc.left.C) == 2
+        Dirichlet_nodes=[Dirichlet_nodes (n+1)];
+    end
 end
 if(dat.bc.rite.type==2)
     Dirichlet_nodes=[Dirichlet_nodes n];
     Dirichlet_val=[Dirichlet_val dat.bc.rite.C];
+    if length(dat.bc.left.C) == 2
+        Dirichlet_nodes=[Dirichlet_nodes (n+n)];
+    end
 end
 
 % apply Dirichlet BC

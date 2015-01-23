@@ -37,17 +37,36 @@ u=[phi;C]; u0=u;
 
 dt=0.01;
 Pnorm=npar.Pnorm;
+
 for it=1:500
     time_end=it*dt;
     fprintf('time end = %g \n',time_end);
-
+    
     TR=assemble_transient_operator(time_end);
+
+%     load tr.mat
+%     M=A+D;
+%     M(end,end)=1;
+%     M(1,1)=1;
+%     P=NFId+NFIp;
+%     eigs(P,M,1,'lm');
+%     [uu,kk]=eigs(P,M,1,'lm');
+%     if(sum(uu)<0), uu=-uu; end
+%     flux=uu;
+%     prec=u0(npar.n+1:end);
+%     [ L*prec (NFIp-A)*flux]
+    
     M =assemble_time_dependent_operator(time_end);
+
+%     load tr2.mat;
+    
     % M(unew-uold)/dt=TR.unew
     rhs = M*u;
     A = M-dt*TR;
-    [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
+%    [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
+    rhs=apply_BC_vec_only(rhs);
     u = A\rhs;
+%     [u u0 (u-u0)]
     plot(npar.x_dofs,u(1:npar.n));drawnow
 
     POW = assemble_load(dat.nusigf,time_end);
@@ -58,6 +77,10 @@ end
 
 figure(2);
 plot(Pnorm/Pnorm(1),'+-')
+
+a=Pnorm/Pnorm(1)-1;
+min(a)
+max(a)
 
 return
 end
