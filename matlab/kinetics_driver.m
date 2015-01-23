@@ -7,7 +7,7 @@ global dat npar
 npar.set_bc_last=true;
 
 % select problem
-pbID=1; refinements=100;
+pbID=3; refinements=30;
 problem_init(pbID,refinements);
 
 % compute eigenmode
@@ -80,9 +80,9 @@ a=Pnorm/Pnorm(1)-1;
 min(a)
 max(a)
 
-[u(npar.n+1) C(1)]
-[u(end) C(end)]
-[u(npar.n+1:end)./C-1]
- 
+% [u(npar.n+1) C(1)]
+% [u(end) C(end)]
+% [u(npar.n+1:end)./C-1]
+%  
 return
 end

@@ -1,4 +1,4 @@
-function ramp(time,t1,t2);
+function value=ramp(time,t1,t2);
 
 if(time<=t1)
     value=0; return

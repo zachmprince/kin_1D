@@ -19,7 +19,7 @@ dat.invvel=1e-3;
 switch problem_ID
     
     case 1
-        % one material, constant in space      
+        % one material, constant in space and time   
         
         b=dat.beta_tot;
         iv=dat.invvel;
@@ -38,6 +38,47 @@ switch problem_ID
         imat = ones(n_regions,1);
 
     case 2
+        % one material, constant in space      
+        
+        b=dat.beta_tot;
+        iv=dat.invvel;
+        dat.cdiff{1}   = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+        times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1];
+        dat.siga{1}    = create_material_prop('ramp_in_time' ,[1.0 0.98],times,'constant_in_space',0);
+        dat.nusigf{1}  = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf_p{1}= create_material_prop('constant_in_time',1.1*(1-b),[],'constant_in_space',0);
+        dat.nusigf_d{1}= create_material_prop('constant_in_time',1.1*b    ,[],'constant_in_space',0);
+        dat.inv_vel{1} = create_material_prop('constant_in_time',iv       ,[],'constant_in_space',0);
+        dat.ext_src{1} = create_material_prop('constant_in_time',0        ,[],'constant_in_space',0);
+
+        n_regions=1;
+        region_width=400;
+        dat.width = region_width * n_regions;
+
+        imat = ones(n_regions,1);
+
+    case 3
+        % one material, constant in space      
+        
+        b=dat.beta_tot;
+        iv=dat.invvel;
+        dat.cdiff{1}   = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+        times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1 ...
+                 dat.rod_mov.t_beg_2 dat.rod_mov.t_end_2 ]/10;
+        dat.siga{1}    = create_material_prop('ramp2_in_time' ,[1 0.98 1],times,'constant_in_space',0);
+        dat.nusigf{1}  = create_material_prop('constant_in_time',1.1      ,[],'constant_in_space',0);
+        dat.nusigf_p{1}= create_material_prop('constant_in_time',1.1*(1-b),[],'constant_in_space',0);
+        dat.nusigf_d{1}= create_material_prop('constant_in_time',1.1*b    ,[],'constant_in_space',0);
+        dat.inv_vel{1} = create_material_prop('constant_in_time',iv       ,[],'constant_in_space',0);
+        dat.ext_src{1} = create_material_prop('constant_in_time',0        ,[],'constant_in_space',0);
+
+        n_regions=1;
+        region_width=400;
+        dat.width = region_width * n_regions;
+
+        imat = ones(n_regions,1);
+
+    case 10
         % have material identifiers 
         n_regions = 20; % assumption: each region has the same width
         region_width=400/n_regions;

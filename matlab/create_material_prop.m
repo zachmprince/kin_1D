@@ -12,7 +12,7 @@ elseif strcmp(time_dep,'ramp_in_time')
     if(times(2)<times(1))
         error('we must have t2>t1 in ramp definition')
     end
-    aux.ft = value(1) + (value(2)-value(1))*ramp(t,times(1),times(2));
+    aux.ft = @(t) ( values(1) + (values(2)-values(1))*ramp(t,times(1),times(2)) );
 
 elseif strcmp(time_dep,'ramp2_in_time')
     % ramp that transitions from val1 to val2 when t is between t1 and t2
@@ -22,7 +22,7 @@ elseif strcmp(time_dep,'ramp2_in_time')
     if(times(2)<times(1))
         error('we must have t2>t1 in ramp definition')
     end
-    aux.ft = value(1) + (value(2)-value(1))*ramp(t,times(1),times(2)) + (value(3)-value(2))*ramp(t,times(3),times(4));
+    aux.ft = @(t) ( values(1) + (values(2)-values(1))*ramp(t,times(1),times(2)) + (values(3)-values(2))*ramp(t,times(3),times(4)) );
 
 else
     error('unknown time dependence');
