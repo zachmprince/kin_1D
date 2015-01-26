@@ -33,8 +33,9 @@ u=[phi;C]; u0=u;
 
 dt=0.01;
 Pnorm=npar.Pnorm;
+ntimes=150;
 
-for it=1:500
+for it=1:ntimes
     time_end=it*dt;
     fprintf('time end = %g \n',time_end);
     
@@ -84,5 +85,27 @@ max(a)
 % [u(end) C(end)]
 % [u(npar.n+1:end)./C-1]
 %  
+
+shape=u0(1:npar.n);
+C=u0(npar.n+1:end);
+[rho_MGT,beff_MGT,prec]=compute_prke_parameters(curr_time,shape,C)
+X=[1;prec];
+Pnorm_prke(1)=X(1);
+
+for it=1:ntimes
+    time_end=it*dt;
+    fprintf('time end = %g \n',time_end);
+    [rho_MGT,beff_MGT,prec]=compute_prke_parameters(time_end,shape,C);
+    A=[(rho_MGT-beff_MGT) dat.lambda ; ...
+        beff_MGT         -dat.lambda];
+    X=(eye(2)-dt*A)\X;
+    Pnorm_prke(it+1)=X(1);
+    
+end
+hold all
+plot(Pnorm_prke,'ro-')
+
+        
+
 return
 end
