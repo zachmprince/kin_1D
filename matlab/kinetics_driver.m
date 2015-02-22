@@ -7,7 +7,7 @@ global dat npar
 npar.set_bc_last=true;
 
 % select problem
-pbID=3; refinements=30;
+pbID=10; refinements=5;
 problem_init(pbID,refinements);
 
 % compute eigenmode
@@ -34,6 +34,22 @@ u=[phi;C]; u0=u;
 dt=0.01;
 Pnorm=npar.Pnorm;
 ntimes=150;
+
+make_movie = true;
+if make_movie
+    %# figure
+    figure, set(gcf, 'Color','white')
+    axis([0 400 0 0.16]);
+    set(gca, 'nextplot','replacechildren', 'Visible','off');
+    %# preallocate
+    mov(1:ntimes) = struct('cdata',[], 'colormap',[]);
+end
+
+% save flux for tests
+phi_save=zeros(length(phi),ntimes);
+
+% test
+npar.phi_adj = ones(length(npar.phi_adj),1);
 
 for it=1:ntimes
     time_end=it*dt;
@@ -67,11 +83,19 @@ for it=1:ntimes
     end
     u = A\rhs;
     plot(npar.x_dofs,u(1:npar.n));drawnow
+    if make_movie, mov(it) = getframe(gca); end
     
     POW = assemble_load(dat.nusigf,time_end);
     Pnorm(it+1)=dot(POW,u(1:npar.n));
     
+    phi_save(:,it)=u(1:npar.n)/Pnorm(it+1);
     
+end
+if make_movie
+    close(gcf)
+    %# save as AVI file
+    movie2avi(mov, 'PbID10.avi', 'compression','None', 'fps',1);
+    % winopen('myPeaks1.avi')
 end
 
 figure(2);
@@ -88,7 +112,7 @@ max(a)
 
 shape=u0(1:npar.n);
 C=u0(npar.n+1:end);
-[rho_MGT,beff_MGT,prec]=compute_prke_parameters(curr_time,shape,C)
+[rho_MGT,beff_MGT,prec]=compute_prke_parameters(curr_time,shape,C);
 X=[1;prec];
 Pnorm_prke(1)=X(1);
 
@@ -105,7 +129,25 @@ end
 hold all
 plot(Pnorm_prke,'ro-')
 
-        
+
+% quasi-static
+C=u0(npar.n+1:end);
+[rho_MGT,beff_MGT,prec]=compute_prke_parameters(curr_time,shape,C);
+X=[1;prec];
+Pnorm_prkeQS(1)=X(1);
+
+for it=1:ntimes
+    time_end=it*dt;
+    fprintf('time end = %g \n',time_end);
+    [rho_MGT,beff_MGT,prec]=compute_prke_parameters(time_end,phi_save(:,it),C);
+    A=[(rho_MGT-beff_MGT) dat.lambda ; ...
+        beff_MGT         -dat.lambda];
+    X=(eye(2)-dt*A)\X;
+    Pnorm_prkeQS(it+1)=X(1);
+    
+end
+plot(Pnorm_prkeQS,'mx-')
+
 
 return
 end

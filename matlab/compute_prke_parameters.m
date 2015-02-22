@@ -10,7 +10,12 @@ NFI  = assemble_mass(     dat.nusigf  ,curr_time) / npar.keff;
 NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff;
 IV   = assemble_mass(     dat.inv_vel ,curr_time);
 
-rho  = phi_adjoint' * (NFI-D-A) * shape;
+IV   = apply_BC_mat_only(IV,npar.add_zero_on_diagonal);
+NFId = apply_BC_mat_only(NFId,npar.add_zero_on_diagonal);
+
+PmM = apply_BC_mat_only(NFI-D-A,npar.add_zero_on_diagonal);
+% rho  = phi_adjoint' * (NFI-D-A) * shape;
+rho  = phi_adjoint' * (PmM) * shape;
 beff = phi_adjoint' * NFId * shape;
 MGT  = phi_adjoint' * IV * shape;
 

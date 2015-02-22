@@ -35,7 +35,8 @@ save  afterbc.mat M_ P_
 % % end
 
 opts.disp=0;
-[u,keff]=eigs(P,M,1,'lm',opts);
+% [u,keff]=eigs(P,M,1,'lm',opts);
+[u,keff]=eigs(M\P,1,'lm',opts);
 
 npar.keff=keff;
 
