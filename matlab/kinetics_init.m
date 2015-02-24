@@ -18,8 +18,7 @@ npar.phi_adj=phi;
 IV = assemble_mass(dat.inv_vel,curr_time);
 K0 = npar.phi_adj' * IV * phi;
 
-POW=assemble_load(dat.nusigf,curr_time);
-Pnorm=dot(POW,phi);
+Pnorm=compute_power(dat.nusigf,curr_time,phi);
 
 npar.K0 = K0;
 npar.Pnorm = Pnorm;

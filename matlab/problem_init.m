@@ -112,7 +112,7 @@ switch problem_ID
         dat.siga{4} = create_material_prop('ramp_in_time',[1.1 1.105],times,'constant_in_space',0);
         times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1 ...
                  dat.rod_mov.t_beg_2 dat.rod_mov.t_end_2 ];
-        dat.siga{3} = create_material_prop('ramp2_in_time',[1.1 1.105 1.1],times,'constant_in_space',0);
+        dat.siga{3} = create_material_prop('ramp2_in_time',[1.1 1.09 1.1],times,'constant_in_space',0);
         
     otherwise
         error('unknown problem ID ',problem_ID);
