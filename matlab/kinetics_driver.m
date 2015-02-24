@@ -7,7 +7,7 @@ global dat npar
 npar.set_bc_last=true;
 
 % select problem
-pbID=10; refinements=5;
+pbID=10; refinements=2;
 problem_init(pbID,refinements);
 
 % compute eigenmode
