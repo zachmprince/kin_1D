@@ -85,8 +85,7 @@ for it=1:ntimes
     plot(npar.x_dofs,u(1:npar.n));drawnow
     if make_movie, mov(it) = getframe(gca); end
     
-    POW = assemble_load(dat.nusigf,time_end);
-    Pnorm(it+1)=dot(POW,u(1:npar.n));
+    Pnorm(it+1) = compute_power(dat.nusigf,time_end,u(1:npar.n));
     
     phi_save(:,it)=u(1:npar.n)/Pnorm(it+1);
     
@@ -95,7 +94,6 @@ if make_movie
     close(gcf)
     %# save as AVI file
     movie2avi(mov, 'PbID10.avi', 'compression','None', 'fps',1);
-    % winopen('myPeaks1.avi')
 end
 
 figure(2);
