@@ -38,7 +38,10 @@ opts.disp=0;
 % [u,keff]=eigs(P,M,1,'lm',opts);
 [u,keff]=eigs(M\P,1,'lm',opts);
 
-npar.keff=keff;
+% trick to save only the initial keff value
+if curr_time < eps
+    npar.keff=keff;
+end
 
 if sum(u)<0
     u=-u;
