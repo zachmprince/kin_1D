@@ -13,15 +13,17 @@ C = NFId*phi/dat.lambda;
 % M=assemble_transient_operator(curr_time);
 % plot(M*[phi;C])
 
+% adjoint flux
 npar.phi_adj=phi;
 
+% normalization constant
 IV = assemble_mass(dat.inv_vel,curr_time);
+% npar.IV0=IV;
 K0 = npar.phi_adj' * IV * phi;
-
-Pnorm=compute_power(dat.nusigf,curr_time,phi);
-
 npar.K0 = K0;
-npar.Pnorm = Pnorm;
+
+% total power
+dat.Ptot = compute_power(dat.nusigf,curr_time,phi);
 
 if ~npar.set_bc_last
     % add precursors BC values
