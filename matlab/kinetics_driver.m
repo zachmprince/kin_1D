@@ -7,6 +7,7 @@ global dat npar
 
 % verbose/output parameters
 testing = false;
+test_prke = false;
 console_print = false;
 plot_transient_figure = false;
 plot_power_figure = true;
@@ -50,8 +51,8 @@ phi_adjoint = npar.phi_adj;
 IV   = assemble_mass(     dat.inv_vel ,curr_time);
 
 % time steping data
-dt=0.01;
-ntimes=100; % 150*2;
+dt=0.1;
+ntimes=10; % 150*2;
 
 amplitude_norm=1;
 
@@ -72,6 +73,7 @@ phi_save=zeros(length(phi),ntimes);
 % npar.phi_adj(1)=0;
 % npar.phi_adj(end)=0;
 
+if ~test_prke
 %%% loop on time steps %%%
 for it=1:ntimes
     
@@ -114,6 +116,93 @@ for it=1:ntimes
     phi_save(:,it)=u(1:npar.n); %/Pnorm(it+1);
     
 end
+
+else %%% Begin PRKE Testing %%%%
+
+% Parameters:
+nmicro = 100;
+dtm = dt / nmicro; % micro time step
+
+p0 = 1;
+c0 = (npar.phi_adj' * C) / npar.K0;
+PRKE_sol = [p0;c0];
+
+% rho = evaluate_reduced_rho(phi,curr_time);
+
+NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff;
+dat.beta=(npar.phi_adj' * NFId * phi) / npar.K0;
+clear NFId
+
+A = zeros(2);
+u_new_old(1:2*npar.n) = 0;
+
+% Shape Time Step
+for it=1:ntimes
+    
+    time_start=(it-1)*dt;
+    time_end=it*dt;
+    
+    u_new=u;
+    
+    for iter=1:10000
+
+        % Micro Time Step
+        for itm=1:nmicro
+
+            curr_time = time_start+itm*dtm;
+            phi_lin=(curr_time-time_start)/dt*phi+(time_end-curr_time)/dt*u_new(1:npar.n);
+            rho = evaluate_reduced_rho(phi_lin,curr_time);
+
+            % Solve PRKE
+            A(1,1)=1-dtm*(rho+dat.beta);
+            A(2,1)=-dat.beta*dtm;
+            A(:,2)=dtm*dat.lambda;
+            PRKE_sol = linsolve(A,PRKE_sol);
+
+        end
+
+        % Assemble, Solve PRKE-Modified Transport
+
+        TR = assemble_transient_operator_prke(PRKE_sol,u_new(1:npar.n),curr_time);
+        M = assemble_time_dependent_operator(time_end);
+
+        rhs = M*u;
+        A = M-dt*TR;
+        if npar.set_bc_last
+            [A,rhs]=apply_BC(A,rhs,npar.add_ones_on_diagonal);
+        else
+            rhs=apply_BC_vec_only(rhs);
+        end
+        u = A\rhs;
+        
+        % Check Convergence
+        if(norm(u_new-u_new_old) < 1.e-12) 
+            break 
+        end
+        
+        u_new_old=u_new;
+        
+        if(iter>=10000)
+            error('myApp:argChk','PRKE function did not converge!')
+        end
+    end
+    
+    % Renormalize shape
+    K = npar.phi_adj'*IV*u_new(1:npar.n);
+    u_new(1:npar.n) = u_new(1:npar.n) * npar.K0 / K;
+    PRKE_sol(1) = PRKE_sol(1) * K / npar.K0;
+    
+    dat.Ptot(it+1) = compute_power(dat.nusigf,time_end,PRKE_sol(1)*u(1:npar.n));
+    
+    amplitude_norm(it+1) = (phi_adjoint'*IV*PRKE_sol(1)*u(1:npar.n))/npar.K0;
+    phi_save(:,it)=PRKE_sol(1)*u_new(1:npar.n); %/Pnorm(it+1);
+    
+    u=u_new;
+    
+end
+
+end %%% End PRKE Testing %%%
+
 if make_movie
     close(gcf)
     % save as AVI file
