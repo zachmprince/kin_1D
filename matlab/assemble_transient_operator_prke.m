@@ -6,16 +6,21 @@ n   = npar.n;
 nnz = npar.nnz;
 M   = sparse(2*n,2*n,2*(nnz+n));
 
-% Modified PRKE siga
-rho = evaluate_reduced_rho(phi,curr_time);
-siga = dat.siga + 1/PRKE_sol(1)*((rho + dat.beta)*PRKE_sol(1)-dat.lambda/PRKE_sol(2));
 D    = assemble_stiffness(dat.cdiff   ,curr_time);
-A    = assemble_mass(         siga    ,curr_time);
+A    = assemble_mass(     dat.siga    ,curr_time);
 NFIp = assemble_mass(     dat.nusigf_p,curr_time) / npar.keff;
 NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff * PRKE_sol(1);
 
+ones{1} = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+for id=2:4
+    ones{id}=ones{1};
+end
+one  = assemble_stiffness(ones   ,curr_time);
+rho = evaluate_reduced_rho(phi,curr_time);
+trans = one * 1/PRKE_sol(1)*((rho + dat.beta)*PRKE_sol(1)-dat.lambda*PRKE_sol(2));
+
 % flux-flux matrix
-tmp=NFIp-(D+A);
+tmp=NFIp-(D+A+trans);
 % prec-flux matrix
 if ~npar.set_bc_last
     NFId=apply_BC_mat_only(NFId,npar.add_zero_on_diagonal);

@@ -7,7 +7,7 @@ global dat npar
 
 % verbose/output parameters
 testing = false;
-test_prke = false;
+test_prke = true;
 console_print = false;
 plot_transient_figure = false;
 plot_power_figure = true;
@@ -125,9 +125,7 @@ dtm = dt / nmicro; % micro time step
 
 p0 = 1;
 c0 = (npar.phi_adj' * C) / npar.K0;
-PRKE_sol = [p0;c0];
-
-% rho = evaluate_reduced_rho(phi,curr_time);
+PRKE_sol = [p0;c0];PRKE_old = PRKE_sol;
 
 NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff;
 dat.beta=(npar.phi_adj' * NFId * phi) / npar.K0;
@@ -135,6 +133,7 @@ clear NFId
 
 A = zeros(2);
 u_new_old(1:2*npar.n) = 0;
+u_new_old = u_new_old';
 
 % Shape Time Step
 for it=1:ntimes
@@ -144,26 +143,31 @@ for it=1:ntimes
     
     u_new=u;
     
+    figure
+    
     for iter=1:10000
 
         % Micro Time Step
         for itm=1:nmicro
 
+            PRKE_sol = PRKE_old;
+            
             curr_time = time_start+itm*dtm;
-            phi_lin=(curr_time-time_start)/dt*phi+(time_end-curr_time)/dt*u_new(1:npar.n);
+            phi_lin=(curr_time-time_start)/dt*u(1:npar.n)+(time_end-curr_time)/dt*u_new(1:npar.n);
             rho = evaluate_reduced_rho(phi_lin,curr_time);
 
             % Solve PRKE
-            A(1,1)=1-dtm*(rho+dat.beta);
-            A(2,1)=-dat.beta*dtm;
-            A(:,2)=dtm*dat.lambda;
-            PRKE_sol = linsolve(A,PRKE_sol);
-
+            sys(1,1)=1-dtm*(rho+dat.beta);
+            sys(2,1)=-dat.beta*dtm;
+            sys(1,2)=dtm*dat.lambda;
+            sys(2,2)=1+dtm*dat.lambda;
+            PRKE_sol = linsolve(sys,PRKE_sol);
+           
         end
 
         % Assemble, Solve PRKE-Modified Transport
 
-        TR = assemble_transient_operator_prke(PRKE_sol,u_new(1:npar.n),curr_time);
+        TR = assemble_transient_operator_prke(PRKE_sol,u_new(1:npar.n),time_end);
         M = assemble_time_dependent_operator(time_end);
 
         rhs = M*u;
@@ -173,14 +177,20 @@ for it=1:ntimes
         else
             rhs=apply_BC_vec_only(rhs);
         end
-        u = A\rhs;
+        u_new = A\rhs;
         
         % Check Convergence
-        if(norm(u_new-u_new_old) < 1.e-12) 
+        err = norm(u_new(1:npar.n)-u_new_old(1:npar.n));
+        if(err < 1.e-6) 
             break 
         end
         
         u_new_old=u_new;
+        
+        fprintf('Time %f Iteration %i ampl %f %f err %f \n',time_end,iter,PRKE_sol,err);
+        hold on
+        plot(PRKE_sol(1)*u_new(1:npar.n))
+        drawnow
         
         if(iter>=10000)
             error('myApp:argChk','PRKE function did not converge!')
@@ -192,12 +202,13 @@ for it=1:ntimes
     u_new(1:npar.n) = u_new(1:npar.n) * npar.K0 / K;
     PRKE_sol(1) = PRKE_sol(1) * K / npar.K0;
     
+    PRKE_old = PRKE_sol;
+    u=u_new;
+    
     dat.Ptot(it+1) = compute_power(dat.nusigf,time_end,PRKE_sol(1)*u(1:npar.n));
     
     amplitude_norm(it+1) = (phi_adjoint'*IV*PRKE_sol(1)*u(1:npar.n))/npar.K0;
-    phi_save(:,it)=PRKE_sol(1)*u_new(1:npar.n); %/Pnorm(it+1);
-    
-    u=u_new;
+    phi_save(:,it)=PRKE_sol(1)*u(1:npar.n); %/Pnorm(it+1);
     
 end
 
