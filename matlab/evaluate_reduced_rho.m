@@ -5,9 +5,9 @@ global dat npar
 
 D    = assemble_stiffness(dat.cdiff   ,curr_time);
 A    = assemble_mass(     dat.siga    ,curr_time);
-NFIp = assemble_mass(     dat.nusigf_p,curr_time) / npar.keff;
+NFI = assemble_mass(     dat.nusigf,curr_time) / npar.keff;
 
-tmp=NFIp-(D+A);
+tmp=NFI-(D+A);
 
 rho=(npar.phi_adj' * tmp * phi) / npar.K0;
 

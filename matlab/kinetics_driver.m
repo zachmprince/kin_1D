@@ -1,6 +1,5 @@
 function kinetics_driver
 
-clear all;
 close all; clc;
 
 global dat npar
@@ -8,8 +7,8 @@ global dat npar
 % verbose/output parameters
 testing = false;
 test_prke = true;
-console_print = false;
-plot_transient_figure = false;
+console_print = true;
+plot_transient_figure = true;
 plot_power_figure = true;
 make_movie = false;
 
@@ -51,8 +50,8 @@ phi_adjoint = npar.phi_adj;
 IV   = assemble_mass(     dat.inv_vel ,curr_time);
 
 % time steping data
-dt=0.1;
-ntimes=10; % 150*2;
+dt=0.01;
+ntimes=300; % 150*2;
 
 amplitude_norm=1;
 
@@ -122,18 +121,24 @@ else %%% Begin PRKE Testing %%%%
 % Parameters:
 nmicro = 100;
 dtm = dt / nmicro; % micro time step
-
-p0 = 1;
-c0 = (npar.phi_adj' * C) / npar.K0;
-PRKE_sol = [p0;c0];PRKE_old = PRKE_sol;
+rhocount_max = 10; % number of micro iterations between rho calculations
 
 NFId = assemble_mass(     dat.nusigf_d,curr_time) / npar.keff;
 dat.beta=(npar.phi_adj' * NFId * phi) / npar.K0;
 clear NFId
 
+% Initializations:
+p0 = 1;
+c0 = (npar.phi_adj' * C) / npar.K0;
+PRKE_sol = [p0;c0]; PRKE_old = PRKE_sol;
+
 A = zeros(2);
 u_new_old(1:2*npar.n) = 0;
 u_new_old = u_new_old';
+ones{1} = create_material_prop('constant_in_time',1        ,[],'constant_in_space',0);
+for id=2:4, ones{id}=ones{1}; end
+dat.mass  = assemble_mass(ones   ,curr_time);
+
 
 % Shape Time Step
 for it=1:ntimes
@@ -141,27 +146,34 @@ for it=1:ntimes
     time_start=(it-1)*dt;
     time_end=it*dt;
     
-    u_new=u;
+    u_new=u; % initialize solution iteration
     
-    figure
+    % if plot_transient_figure, figure; end
     
+    % Shape Iteration
     for iter=1:10000
 
+        rhocount = rhocount_max;
         % Micro Time Step
         for itm=1:nmicro
 
             PRKE_sol = PRKE_old;
             
-            curr_time = time_start+itm*dtm;
-            phi_lin=(curr_time-time_start)/dt*u(1:npar.n)+(time_end-curr_time)/dt*u_new(1:npar.n);
-            rho = evaluate_reduced_rho(phi_lin,curr_time);
+            if (rhocount == rhocount_max)
+                curr_time = time_start+itm*dtm;
+                phi_lin=(curr_time-time_start)/dt*u(1:npar.n)+(time_end-curr_time)/dt*u_new(1:npar.n);
+                rho = evaluate_reduced_rho(phi_lin,curr_time);
+                rhocount = 1;
+            else
+                rhocount = rhocount + 1;
+            end
 
-            % Solve PRKE
-            sys(1,1)=1-dtm*(rho+dat.beta);
-            sys(2,1)=-dat.beta*dtm;
-            sys(1,2)=dtm*dat.lambda;
-            sys(2,2)=1+dtm*dat.lambda;
-            PRKE_sol = linsolve(sys,PRKE_sol);
+            % Solve PRKE (implicit midpoint)
+            sys=[(rho-dat.beta)  dat.lambda ; ...
+                  dat.beta      -dat.lambda];
+            rhss=[(2/dtm+rho-dat.beta)*PRKE_sol(1)+dat.lambda*PRKE_sol(2); ...
+                  dat.beta*PRKE_sol(1)+(2/dtm-dat.lambda)*PRKE_sol(2)];
+            PRKE_sol=(2/dtm*eye(2)-sys)\rhss;
            
         end
 
@@ -177,31 +189,35 @@ for it=1:ntimes
         else
             rhs=apply_BC_vec_only(rhs);
         end
-        u_new = A\rhs;
+        u_new = (A\rhs);
         
         % Check Convergence
         err = norm(u_new(1:npar.n)-u_new_old(1:npar.n));
-        if(err < 1.e-6) 
-            break 
-        end
         
         u_new_old=u_new;
         
-        fprintf('Time %f Iteration %i ampl %f %f err %f \n',time_end,iter,PRKE_sol,err);
-        hold on
-        plot(PRKE_sol(1)*u_new(1:npar.n))
-        drawnow
+        if console_print, fprintf('time %f iter %i ampl %f err %f \n',time_end,iter,PRKE_sol(1),err); end
         
+        if(err < 1.e-6) 
+            break 
+        end
         if(iter>=10000)
-            error('myApp:argChk','PRKE function did not converge!')
+            error('myApp:argChk','PRKE did not converge!')
         end
     end
     
     % Renormalize shape
     K = npar.phi_adj'*IV*u_new(1:npar.n);
     u_new(1:npar.n) = u_new(1:npar.n) * npar.K0 / K;
-    PRKE_sol(1) = PRKE_sol(1) * K / npar.K0;
-    
+    PRKE_sol = PRKE_sol * K / npar.K0;
+
+    if plot_transient_figure
+        %hold on
+        plot(npar.x_dofs,PRKE_sol(1)*u(1:npar.n))
+        drawnow
+    end
+
+    % Pass solution iterations
     PRKE_old = PRKE_sol;
     u=u_new;
     
@@ -212,7 +228,11 @@ for it=1:ntimes
     
 end
 
+hold off
+figure
+
 end %%% End PRKE Testing %%%
+
 
 if make_movie
     close(gcf)
