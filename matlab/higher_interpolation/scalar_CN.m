@@ -14,6 +14,16 @@ a_const=2;
 a_type = 3;
 % solution type
 solution_type = 3;
+% time_discretization 'Crank-Nicholson' or 'SDIRK33'
+time_discretization = 'Crank-Nicholson';
+time_discretization = 'SDIRK33';
+% sdirk33 constants:
+g=0.43586652150845899941601945119356;
+A=[g 0 0; ...
+    ((1-g)/2) g 0;...
+    (-(6*g^2-16*g+1)/4) ((6*g^2-20*g+5)/4) g];
+c=sum(A');
+b=A(end,:);
 
 % tolerances for odesolvers
 rtol = 1e-13; abso = 1e-13;
@@ -97,31 +107,57 @@ n_runs=10;
 n_steps = 2.^linspace(1,n_runs,n_runs);
 
 for i_run=1:n_runs
-    
+
     nbr_steps = n_steps(i_run);
     dt = tend/nbr_steps;
-    
+
     sol=zeros(nbr_steps+1,1);
     sol(1)=u0;
-    
+
     for it=1:nbr_steps
-        time0 = (it-1)*dt;
-        time1 = time0 + dt;
-        % CN: (unew - uold)/dt = 0.5 ( a(old)u(old)+q(old) + a(new)u(new)+q(new) )
-        deno = 1-dt/2*a(time1);
-        sol(it+1) = ( sol(it) + dt/2*(scalar_ssres(time0,sol(it),a,q) + q(time1)) )/deno;
+        if strcmpi(time_discretization,'Crank-Nicholson')
+            time0 = (it-1)*dt;
+            time1 = time0 + dt;
+            % CN: (unew - uold)/dt = 0.5 ( a(old)u(old)+q(old) + a(new)u(new)+q(new) )
+            deno = 1-dt/2*a(time1);
+            sol(it+1) = ( sol(it) + dt/2*(scalar_ssres(time0,sol(it),a,q) + q(time1)) )/deno;
+        elseif strcmpi(time_discretization,'SDIRK33')
+            % Yi = yn + dt sum_j { A_ij f(tj, Yj) }
+            time0 = (it-1)*dt;
+            % stage 1
+            t1 = time0 + c(1)*dt;
+            deno = 1 - dt*A(1,1)*a(t1);
+            Y1 = ( sol(it) + dt*A(1,1)*q(t1) )/deno;
+            % stage 2
+            t2 = time0 + c(2)*dt;
+            deno = 1 - dt*A(2,2)*a(t2);
+            Y2 = ( sol(it) + dt*A(2,1)*scalar_ssres(t1,Y1,a,q) + dt*A(2,2)*q(t2) )/deno;
+            % stage 3
+            t3 = time0 + c(3)*dt;
+            deno = 1 - dt*A(3,3)*a(t3);
+            Y3 = ( sol(it) + dt*A(3,1)*scalar_ssres(t1,Y1,a,q) + dt*A(3,2)*scalar_ssres(t2,Y2,a,q) + dt*A(3,3)*q(t3) )/deno;
+            % update
+            sol(it+1) = Y3;
+        else
+            error('unknown time discretization');
+        end
     end
     plot(linspace(0,tend,nbr_steps+1),sol);
     conv_sol(i_run) = abs(sol(end)-u_ref);
     conv_dt(i_run) = dt;
-    
+
 end
 
 figure(2)
 loglog(conv_dt,conv_sol,'+-'); hold all;
-% error = C dt^2. Compute C for the smallest dt value
-C = conv_sol(end)/conv_dt(end)^2;
-loglog(conv_dt,C*conv_dt.^2);
-    
+% error = C dt^p. Compute C for the smallest dt value
+if strcmpi(time_discretization,'Crank-Nicholson')
+    porder=2;
+elseif strcmpi(time_discretization,'SDIRK33')
+    porder=3;
+end
+C = conv_sol(end)/conv_dt(end)^porder;
+loglog(conv_dt,C*conv_dt.^porder);
+
 
 [conv_dt' conv_sol']
