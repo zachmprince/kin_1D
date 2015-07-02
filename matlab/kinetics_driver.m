@@ -8,7 +8,7 @@ global dat npar
 % verbose/output parameters
 testing = false;
 console_print = false;
-plot_transient_figure = false;
+plot_transient_figure = true;
 plot_power_figure = true;
 make_movie = false;
 
@@ -16,13 +16,14 @@ make_movie = false;
 npar.set_bc_last=true;
 
 % select problem
-pbID=10; refinements=5;
+pbID=10; refinements=2;
 problem_init(pbID,refinements);
 
 % compute eigenmode
 curr_time=0;
 [phi,keff]=steady_state_eigenproblem(curr_time);
 if plot_transient_figure
+    % Plots initial flux
     plot(npar.x_dofs,phi); 
 end
 if console_print
