@@ -81,9 +81,10 @@ switch problem_ID
     case 10
         % have material identifiers 
         n_regions = 20; % assumption: each region has the same width
-        region_width=400/n_regions;
+        region_width=400/n_regions; 
         dat.width = region_width * n_regions;
         
+%         Heterogeneous material zone index
         imat = ones(n_regions,1);
         imat(5) = 2;
         imat(6) = 3;
@@ -107,18 +108,22 @@ switch problem_ID
             dat.inv_vel{id}  = dat.inv_vel{1} ;
             dat.ext_src{id}  = dat.ext_src{1}    ;
         end
+%       Defining absorption xs as function of time
         times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1];
+%        control rod is removed
         dat.siga{2} = create_material_prop('ramp_in_time',[1.1 1.095],times,'constant_in_space',0);
+%        control rod is inserted
         dat.siga{4} = create_material_prop('ramp_in_time',[1.1 1.105],times,'constant_in_space',0);
         times = [dat.rod_mov.t_beg_1 dat.rod_mov.t_end_1 ...
                  dat.rod_mov.t_beg_2 dat.rod_mov.t_end_2 ];
+%         control rod is removed then inserted
         dat.siga{3} = create_material_prop('ramp2_in_time',[1.1 1.09 1.1],times,'constant_in_space',0);
         
     otherwise
         error('unknown problem ID ',problem_ID);
 end
 
-
+% Boundary Conditions
 bc.left.type=2; %0=neumann, 1=robin, 2=dirichlet
 bc.left.C=0; % (that data is C in: -Ddu/dn=C // u/4+D/2du/dn=C // u=C)
 bc.rite.type=2;
